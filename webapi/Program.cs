@@ -42,13 +42,16 @@ public sealed class Program
         builder.Services
             .AddSingleton<ILogger>(sp => sp.GetRequiredService<ILogger<Program>>()) // some services require an un-templated ILogger
             .AddOptions(builder.Configuration)
-            .AddPlannerServices()
             .AddPersistentChatStore()
-            .AddPersistentOcrSupport()
             .AddUtilities()
             .AddCopilotChatAuthentication(builder.Configuration)
-            .AddCopilotChatAuthorization()
-            .AddSemanticKernelServices();
+            .AddCopilotChatAuthorization();
+
+        // Configure and add semantic services
+        builder
+            .AddSemanticKernelServices()
+            .AddPlannerServices()
+            .AddSemanticMemoryServices();
 
         // Add SignalR as the real time relay service
         builder.Services.AddSignalR();
@@ -67,7 +70,7 @@ public sealed class Program
         builder.Services
             .AddEndpointsApiExplorer()
             .AddSwaggerGen()
-            .AddCorsPolicy()
+            .AddCorsPolicy(builder.Configuration)
             .AddControllers()
             .AddJsonOptions(options =>
             {

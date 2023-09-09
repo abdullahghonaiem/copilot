@@ -1,29 +1,22 @@
-name: copilot-build-backend
+﻿name: copilot-build-memorypipeline
 
 on:
-  workflow_dispatch:
   pull_request:
     branches: ["main"]
     paths:
-      - "webapi/**"
+      - "memorypipeline/**"
   workflow_call:
     outputs:
       artifact:
-        description: "The name of the uploaded web api artifact."
-        value: ${{jobs.webapi.outputs.artifact}}
+        description: "The name of the uploaded memory pipeline artifact."
+        value: ${{jobs.memory-pipeline.outputs.artifact}}
 
 permissions:
   contents: read
 
 jobs:
-  webapi:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - { dotnet: "6.0", configuration: Release, os: windows-latest }
-
-    runs-on: ${{ matrix.os }}
+  memory-pipeline:
+    runs-on: windows-latest
 
     env:
       NUGET_CERT_REVOCATION_MODE: offline
@@ -32,7 +25,7 @@ jobs:
       artifact: ${{steps.artifactoutput.outputs.artifactname}}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
         with:
           clean: true
           fetch-depth: 0
@@ -55,16 +48,21 @@ jobs:
           echo $VERSION_TAG
           Write-Output "versiontag=$VERSION_TAG" >> $env:GITHUB_OUTPUT
 
-      - name: Package Copilot Chat WebAPI
+      - name: Set .Net Core version
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 6.0.x
+
+      - name: Package Copilot Chat Memory Pipeline
         run: |
-          scripts\deploy\package-webapi.ps1 -Configuration Release -DotnetFramework net6.0 -TargetRuntime win-x64 -OutputDirectory ${{ github.workspace }}\scripts\deploy -Version ${{ steps.versiontag.outputs.versiontag }} -InformationalVersion "Built from commit ${{ steps.gitversion.outputs.ShortSha }} on $(Get-Date -Format "yyyy-MM-dd")"
+          scripts\deploy\package-memorypipeline.ps1 -Configuration Release -DotnetFramework net6.0 -TargetRuntime win-x64 -OutputDirectory ${{ github.workspace }}\scripts\deploy -Version ${{ steps.versiontag.outputs.versiontag }} -InformationalVersion "Built from commit ${{ steps.gitversion.outputs.ShortSha }} on $(Get-Date -Format "yyyy-MM-dd")"
 
       - name: Upload package to artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: copilotchat-webapi-${{ steps.versiontag.outputs.versiontag }}
-          path: ${{ github.workspace }}\scripts\deploy\out\webapi.zip
+          name: copilotchat-memorypipeline-${{ steps.versiontag.outputs.versiontag }}
+          path: ${{ github.workspace }}\scripts\deploy\out\memorypipeline.zip
 
       - name: "Set outputs"
         id: artifactoutput
-        run: Write-Output "artifactname=copilotchat-webapi-${{ steps.versiontag.outputs.versiontag }}" >> $env:GITHUB_OUTPUT
+        run: Write-Output "artifactname=copilotchat-memorypipeline-${{ steps.versiontag.outputs.versiontag }}" >> $env:GITHUB_OUTPUT
